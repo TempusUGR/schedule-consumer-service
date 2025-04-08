@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.calendarugr.schedule_consumer_service.dtos.ClassDTO;
+import com.calendarugr.schedule_consumer_service.dtos.ExtraClassDTO;
 import com.calendarugr.schedule_consumer_service.dtos.FieldGradeDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubjectGroupsDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubscriptionDTO;
@@ -65,6 +66,12 @@ public class ScheduleConsumerController {
     @PostMapping("/validate-subscription")
     public ResponseEntity<Boolean> validateSubscription(@RequestBody SubscriptionDTO subscription) {
         boolean isValid = scheduleConsumerService.validateSubscription(subscription);
+        return ResponseEntity.ok(isValid);
+    }
+
+    @PostMapping("/validate-extra-class")
+    public ResponseEntity<Boolean> validateExtraClass(@RequestBody ExtraClassDTO extraClass) {
+        boolean isValid = scheduleConsumerService.validateExtraClass(extraClass);
         return ResponseEntity.ok(isValid);
     }
 }

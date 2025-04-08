@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ import lombok.Setter;
 public class AllGradesScrapping {
 
     private static final String ROOT_URL = "https://grados.ugr.es/";
+
+    @Value("${server.port}")
+    private String serverPort;
 
     @Autowired
     private GradeRepository gradeRepository;
@@ -89,19 +93,21 @@ public class AllGradesScrapping {
     @Async
     @Scheduled(cron = "0 50 23 * * ?") // Every day at 23:50
     public void runAllTasks() {
-        // Medir el tiempo de ejecución
-        long startTime = System.currentTimeMillis();
-        System.out.println("Starting the scrapping process...");
-        getGrades();
-        getSubjects();
-        getAllScheduleInfo();
-        // Specific method for the "Grado en Farmacia y Nutrición Humana y Dietética", which has a broken link
-        getInfoFromBrokenLink();
-        long endTime = System.currentTimeMillis();
-        System.out.println(
-                "The scrapping process has finished. It took " + (endTime - startTime) / 1000 / 60 + " minutes."); // ~
-                                                                                                                   // 53
-                                                                                                                   // minutes
+
+        if (serverPort.equals("8083")) {
+            long startTime = System.currentTimeMillis();
+            System.out.println("Starting the scrapping process...");
+            getGrades();
+            getSubjects();
+            getAllScheduleInfo();
+            // Specific method for the "Grado en Farmacia y Nutrición Humana y Dietética", which has a broken link
+            getInfoFromBrokenLink();
+            long endTime = System.currentTimeMillis();
+            System.out.println(
+                    "The scrapping process has finished. It took " + (endTime - startTime) / 1000 / 60 + " minutes."); // ~
+                                                                                                                    // 53                                                                                                           // minutes
+        } 
+
     }
 
     public void getGrades() {
@@ -206,8 +212,7 @@ public class AllGradesScrapping {
             Document doc = connect(subject.getUrl());
 
             if (doc == null) {
-                System.out
-                        .println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
+                System.out.println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
                 return;
             }
 
@@ -313,8 +318,7 @@ public class AllGradesScrapping {
                                     java.time.LocalDate.parse(finishDate, dateFormatter), classroom,
                                     groupOptional.get());
 
-                    System.out
-                            .println("SUBJECT " + subject.getName() + " OF THE GRADE " + subject.getGrade().getName());
+                    //System.out.println("SUBJECT " + subject.getName() + " OF THE GRADE " + subject.getGrade().getName());
 
                     if (listClases.size() == 0) {
 
@@ -402,8 +406,7 @@ public class AllGradesScrapping {
             Document doc_subject = connect(subject.getUrl());
 
             if (doc_subject == null) {
-                System.out
-                        .println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
+                System.out.println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
                 return;
             }
 
@@ -509,8 +512,7 @@ public class AllGradesScrapping {
                                     java.time.LocalDate.parse(finishDate, dateFormatter), classroom,
                                     groupOptional.get());
 
-                    System.out
-                            .println("SUBJECT " + subject.getName() + " OF THE GRADE " + subject.getGrade().getName());
+                    //System.out.println("SUBJECT " + subject.getName() + " OF THE GRADE " + subject.getGrade().getName());
 
                     if (listClases.size() == 0) {
 

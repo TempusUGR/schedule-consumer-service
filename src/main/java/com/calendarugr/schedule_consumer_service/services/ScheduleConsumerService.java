@@ -3,12 +3,15 @@ package com.calendarugr.schedule_consumer_service.services;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.calendarugr.schedule_consumer_service.dtos.ClassDTO;
+import com.calendarugr.schedule_consumer_service.dtos.ExtraClassDTO;
 import com.calendarugr.schedule_consumer_service.dtos.FieldGradeDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubjectGroupsDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubscriptionDTO;
@@ -23,6 +26,9 @@ import com.calendarugr.schedule_consumer_service.repositories.SubjectRepository;
 
 @Service
 public class ScheduleConsumerService {
+
+    @Value("${server.port}")
+    private String port;
 
     @Autowired
     private GradeRepository gradeRepository;
@@ -63,7 +69,7 @@ public class ScheduleConsumerService {
         Optional<Group> groupOptional = getGroupByNameAndSubjectName(group, subject, grade);
         if (groupOptional.isPresent()) {
             Group groupEntity = groupOptional.get();
-            System.out.println("Group: " + groupEntity.getName() + " ID " + groupEntity.getId());
+            //System.out.println("Group: " + groupEntity.getName() + " ID " + groupEntity.getId());
             classes = classInfoRepository.findBySubjectGroup(groupEntity);
             if (classes.isEmpty()) {
                 System.out.println("Classes empty");
@@ -75,20 +81,26 @@ public class ScheduleConsumerService {
     }
 
     public List<FieldGradeDTO> getGrades() {
-        HashMap<String, List<String>> gradesMap = new HashMap<>();
+        HashMap<String, List<Map<String, String>>> gradesMap = new HashMap<>();
         List<FieldGradeDTO> grades = new ArrayList<>();
         List<Grade> gradesEntity = gradeRepository.findAll();
+    
         if (gradesEntity.isEmpty()) {
             return List.of();
         }
-        
+    
         for (Grade grade : gradesEntity) {
             if (!gradesMap.containsKey(grade.getField())) {
                 gradesMap.put(grade.getField(), new ArrayList<>());
             }
-            gradesMap.get(grade.getField()).add(grade.getName());
+            // Crear un mapa con las claves "grade" y "faculty"
+            Map<String, String> gradeEntry = Map.of(
+                "grade", grade.getName(),
+                "faculty", grade.getFaculty()
+            );
+            gradesMap.get(grade.getField()).add(gradeEntry);
         }
-
+    
         for (String field : gradesMap.keySet()) {
             FieldGradeDTO fieldGrade = new FieldGradeDTO(field, gradesMap.get(field));
             grades.add(fieldGrade);
@@ -164,6 +176,59 @@ public class ScheduleConsumerService {
         }
 
         return true;
+    }
+
+    public boolean validateExtraClass(ExtraClassDTO extraClass) {
+
+        if (extraClass.getType() == "GROUP") { // A group event depends on the grade, subject group and classroom
+            // First we need to check if the grade exists
+            Optional<Grade> grade = findGradeByName(extraClass.getGradeName());
+            if (grade.isEmpty()) {
+                return false;
+            }
+
+            // Then we need to check if the subject exists, and if so, if belongs to the grade
+            Optional<Subject> subject = getSubjectByNameAndGrade(extraClass.getSubjectName(), extraClass.getGradeName());
+            if (subject.isEmpty()) {
+                return false;
+            }
+
+            // Finally we need to check if the group exists, and if so, if belongs to the subject
+            Optional<Group> group = getGroupByNameAndSubjectName(extraClass.getGroupName(), extraClass.getSubjectName(), extraClass.getGradeName());
+            if (group.isEmpty()) {
+                return false;
+            }
+
+            // We need to check if there is conflict with classes in the same grade, subject, group, date, day, init hour and finish hour
+            List<ClassInfo> conflicts = classInfoRepository.findConflictingClassesOnGroupEvent(
+                extraClass.getFacultyName(),
+                extraClass.getDate(),
+                extraClass.getClassroom(),
+                extraClass.getInitHour(),
+                extraClass.getFinishHour()
+            );
+
+            if (!conflicts.isEmpty()) {
+                return false;
+            }
+
+        }else{ // A faculty event doesn't depend on classroom or grade, subject and group
+
+        List<ClassInfo> conflicts = classInfoRepository.findConflictingClassesOnFacultyEvent(
+                extraClass.getFacultyName(),
+                extraClass.getDate(),
+                extraClass.getInitHour(),
+                extraClass.getFinishHour()
+            );
+
+            if (!conflicts.isEmpty()) {
+                return false;
+            }
+
+        }
+
+        return true;
+        
     }
 
 }
