@@ -37,8 +37,8 @@ public class Group{
     private String name;
 
     @NotNull
-    @Size(max = 600)
-    @Column(length = 600)
+    @Size(max = 500)
+    @Column(length = 500)
     private String teacher;
 
     @ManyToOne

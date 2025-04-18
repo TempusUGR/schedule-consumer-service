@@ -3,6 +3,7 @@ package com.calendarugr.schedule_consumer_service.repositories;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +24,9 @@ public interface ClassInfoRepository extends JpaRepository<ClassInfo, Long> {
 
         List<ClassInfo> findByDayAndInitHourAndInitDateAndFinishDateAndClassroomAndSubjectGroup(String day, LocalTime localTime, LocalDate initDate, LocalDate finishDate,
                 String classroom, Group subjectGroup);
+        
+        List<ClassInfo> findByDayAndInitHourAndFinishHourAndClassroomAndSubjectGroup(String day, LocalTime localTime,
+                LocalTime localTime2, String classroom, Group group);
 
         @Query("SELECT c FROM ClassInfo c " +
         "JOIN c.subjectGroup sg " +
@@ -53,4 +57,6 @@ public interface ClassInfoRepository extends JpaRepository<ClassInfo, Long> {
                 @Param("date") LocalDate date,
                 @Param("initHour") LocalTime initHour,
                 @Param("finishHour") LocalTime finishHour);
+
+        Optional<ClassInfo> findByDayAndSubjectGroup(String day, Group group);
 }

@@ -58,6 +58,7 @@ public class ScheduleConsumerController {
     public ResponseEntity<?> getClassesPerSubscriptions(@RequestBody List<SubscriptionDTO> subscriptions) {
         List<ClassDTO> classes = scheduleConsumerService.getClassesPerSubscriptions(subscriptions);
         if (classes.isEmpty()) {
+            System.out.println("Clases vacías");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron clases para las suscripciones");
         }
         return ResponseEntity.ok(classes);
