@@ -30,6 +30,7 @@ public class ScheduleConsumerServiceApplication {
 		System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
 		System.setProperty("DB_URL", dotenv.get("DB_URL"));
 		System.setProperty("API_KEY", dotenv.get("API_KEY"));
+		System.setProperty("EUREKA_URL", dotenv.get("EUREKA_URL"));
 		SpringApplication.run(ScheduleConsumerServiceApplication.class, args);
 
 	}

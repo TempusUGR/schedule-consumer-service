@@ -25,7 +25,9 @@ public class ApiGatewayValidationFilter extends OncePerRequestFilter {
 
         if (!forwardedFor.equals(System.getProperty("API_KEY"))) {
             response.setStatus(HttpStatus.FORBIDDEN.value());
-            response.getWriter().write("Access denied: Invalid API Key.");
+            response.getWriter().write("Access denied: Invalid API Key. API_KEY: " + System.getProperty("API_KEY"));
+            System.out.println("Access denied: Invalid API Key. API_KEY: " + System.getProperty("API_KEY"));
+            System.out.println("X-Api-Key: " + forwardedFor);
             return;
         }
 

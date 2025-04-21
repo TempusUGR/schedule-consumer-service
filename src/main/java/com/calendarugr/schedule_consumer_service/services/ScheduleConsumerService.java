@@ -179,8 +179,9 @@ public class ScheduleConsumerService {
     }
 
     public boolean validateExtraClass(ExtraClassDTO extraClass) {
+        System.out.println("Validating extra class");
 
-        if (extraClass.getType() == "GROUP") { // A group event depends on the grade, subject group and classroom
+        if (extraClass.getType().equals("GROUP")) { // A group event depends on classroom
             // First we need to check if the grade exists
             Optional<Grade> grade = findGradeByName(extraClass.getGradeName());
             if (grade.isEmpty()) {
@@ -202,20 +203,24 @@ public class ScheduleConsumerService {
             // We need to check if there is conflict with classes in the same grade, subject, group, date, day, init hour and finish hour
             List<ClassInfo> conflicts = classInfoRepository.findConflictingClassesOnGroupEvent(
                 extraClass.getFacultyName(),
+                extraClass.getDay(),
                 extraClass.getDate(),
                 extraClass.getClassroom(),
                 extraClass.getInitHour(),
                 extraClass.getFinishHour()
             );
 
+            System.out.println("Conflicts: " + conflicts.size());
+
             if (!conflicts.isEmpty()) {
                 return false;
             }
 
-        }else{ // A faculty event doesn't depend on classroom or grade, subject and group
+        }else{ // A faculty event doesn't depend on classroom 
 
-        List<ClassInfo> conflicts = classInfoRepository.findConflictingClassesOnFacultyEvent(
+            List<ClassInfo> conflicts = classInfoRepository.findConflictingClassesOnFacultyEvent(
                 extraClass.getFacultyName(),
+                extraClass.getDay(),
                 extraClass.getDate(),
                 extraClass.getInitHour(),
                 extraClass.getFinishHour()

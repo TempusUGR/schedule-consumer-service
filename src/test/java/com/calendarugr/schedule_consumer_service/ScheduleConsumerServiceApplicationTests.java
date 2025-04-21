@@ -1,160 +1,172 @@
 package com.calendarugr.schedule_consumer_service;
 
-import java.util.HashMap;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import com.calendarugr.schedule_consumer_service.dtos.ClassDTO;
+import com.calendarugr.schedule_consumer_service.dtos.ExtraClassDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubscriptionDTO;
+import com.calendarugr.schedule_consumer_service.entities.ClassInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import io.github.cdimascio.dotenv.Dotenv;
+
+@SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ScheduleConsumerServiceApplicationTests {
 
-    private final String BASE_URL = "http://schedule-consumer-service/schedule-consumer";
-    
+	private static String apiKey;
+
+	public ScheduleConsumerServiceApplicationTests() {
+		Dotenv dotenv = Dotenv.load();
+		System.setProperty("API_KEY", dotenv.get("API_KEY"));
+		apiKey = dotenv.get("API_KEY");
+	}
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    private final String BASE_URL = "/schedule-consumer";
+
     @Autowired
-    private WebClient.Builder webClientBuilder;
+    private MockMvc mockMvc;
 
-	@Value("${api.key}") 
-    private String apiKey;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-	// We check that this request -> localhost:8090/schedule-consumer/classes-from-group?grade=Grado en Ingeniería Informática&subject=Ingeniería de Servidores&group=A
-	// Gives us reply us with only one class. Then we check that the class is on "Viernes".
-	@Test
-	void testGetClassesFromGroup() {
-		String grade = "Grado en Ingeniería Informática";
-		String subject = "Ingeniería de Servidores";
-		String group = "A";
+    @Test
+    void testGetClassesFromGroup() throws Exception {
 
-		try {
-			List<ClassDTO> classes = webClientBuilder.build()
-					.get()
-					.uri(BASE_URL + "/classes-from-group?grade=" + grade + "&subject=" + subject + "&group=" + group)
-					.header("X-Api-Key", apiKey) // Añadir la cabecera de la API Key
-					.retrieve()
-					.bodyToFlux(ClassDTO.class)
-					.collectList()
-					.block();
+        String grade = "Grado en Ingeniería Informática";
+        String subject = "Ingeniería de Servidores";
+        String group = "A";
+        ClassInfo mockClass = new ClassInfo();
+		mockClass.setDay("Viernes");
 
-			// Check that we have only one class
-			assert classes != null;
-			assert classes.size() == 1;
-			// Check that the class is on "Viernes"
-			assert classes.get(0).getDay().equals("Viernes");
+		System.out.println("API Key: " + apiKey);
 
-		} catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-			System.err.println("Error: " + e.getStatusCode());
-			System.err.println("Response Body: " + e.getResponseBodyAsString());
-			throw e; // Re-lanzar la excepción para que el test falle
-		}
-	}
+        mockMvc.perform(MockMvcRequestBuilders.get(BASE_URL + "/classes-from-group")
+                .param("grade", grade)
+                .param("subject", subject)
+                .param("group", group)
+                .header("X-Api-Key", apiKey))
+        .andDo(result -> System.out.println("Response: " + result.getResponse().getContentAsString()))
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].day").value("Viernes"));
 
-	// We check that there is 6 objects in the list that we request -> localhost:8090/schedule-consumer/grades
-	@Test
-	void testGetGrades() { // 6 different knowledge areas
-		try {
-			List<?> grades = webClientBuilder.build()
-					.get()
-					.uri(BASE_URL + "/grades")
-					.header("X-Api-Key", apiKey) // Añadir la cabecera de la API Key
-					.retrieve()
-					.bodyToFlux(Object.class)
-					.collectList()
-					.block();
+    }
 
-			assert grades != null;
-			assert grades.size() == 6;
+    @Test
+    void testValidateExtraClass() throws Exception {
+        ExtraClassDTO extraClass = new ExtraClassDTO();
+        extraClass.setClassroom("06");
+        extraClass.setDay("Viernes");
+        extraClass.setDate(LocalDate.of(2024, 11, 22));
+        extraClass.setInitHour(LocalTime.of(15, 40));
+        extraClass.setFinishHour(LocalTime.of(17, 20));
+        extraClass.setGroupName("A");
+        extraClass.setSubjectName("Ingeniería de Servidores");
+        extraClass.setTeacher("Juanlu");
+        extraClass.setGradeName("Grado en Ingeniería Informática");
+        extraClass.setFacultyName("E.T.S. de Ingenierías Informática y de Telecomunicación");
+        extraClass.setTitle("Corrección práctica 2");
+        extraClass.setType("GROUP");
+        extraClass.setGroupName("A");
 
-		} catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-			System.err.println("Error: " + e.getStatusCode());
-			System.err.println("Response Body: " + e.getResponseBodyAsString());
-			throw e; // Re-lanzar la excepción para que el test falle
-		}
-	}
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-extra-class")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Api-Key", apiKey)
+                        .content(objectMapper.writeValueAsString(extraClass)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.content().string("false"));
 
-	// Test if calling -> localhost:8090/schedule-consumer/subjects-groups?grade=Grado en Ingeniería Informática
-	// we get a subject called "Transmisión de Datos y Redes de Computadores (Especialidadtecnologías de la Información)" with 4 groups
-	@Test
-	void testGetSubjectsGroups() {
-		String grade = "Grado en Ingeniería Informática";
+    }
+    
+    @Test
+    void testGetGrades() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(BASE_URL + "/grades")
+                        .header("X-Api-Key", apiKey))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(6)); 
+    }
 
-		try {
-			List<HashMap<String, Object>> subjects = webClientBuilder.build()
-					.get()
-					.uri(BASE_URL + "/subjects-groups?grade=" + grade)
-					.header("X-Api-Key", apiKey) // Añadir la cabecera de la API Key
-					.retrieve()
-					.bodyToFlux(new ParameterizedTypeReference<HashMap<String, Object>>() {})
-					.collectList()
-					.block();
+    @Test
+    void testGetSubjectsGroups() throws Exception {
+        String grade = "Grado en Ingeniería Informática";
+        mockMvc.perform(MockMvcRequestBuilders.get(BASE_URL + "/subjects-groups")
+                        .param("grade", grade)
+                        .header("X-Api-Key", apiKey))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].subject").value("Cálculo"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].groups").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].groups.length()").value(22));
+    }
 
-			// Iterate over HashMap list to find the key (subject) with the value "Transmisión de Datos y Redes de Computadores (Especialidadtecnologías de la Información)"
-			boolean found = false;
+    @Test
+    void testValidateSubscription() throws Exception {
+        SubscriptionDTO validSubscription = new SubscriptionDTO();
+        validSubscription.setGrade("Grado en Ingeniería Informática");
+        validSubscription.setSubject("Ingeniería de Servidores");
+        validSubscription.setGroup("A");
 
-			for (HashMap<String, Object> subject : subjects) {
-				if (subject.get("subject").equals("Transmisión de Datos y Redes de Computadores (Especialidadtecnologías de la Información)")) {
-					List<String> groups = (List<String>)subject.get("groups");
-					assert groups != null;
-					assert groups.size() == 4;
-					found = true;
-					break;
-				}
-			}
-			assert found : "Subject not found in the list";
+        SubscriptionDTO invalidSubscription = new SubscriptionDTO();
+        invalidSubscription.setGrade("Grado en Ingeniería Informática");
+        invalidSubscription.setSubject("Ingeniería de Servidores");
+        invalidSubscription.setGroup("Z");
 
-		} catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-			System.err.println("Error: " + e.getStatusCode());
-			System.err.println("Response Body: " + e.getResponseBodyAsString());
-			throw e; // Re-lanzar la excepción para que el test falle
-		}
-	}
+        // Test valid subscription
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-subscription")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Api-Key", apiKey)
+                        .content(objectMapper.writeValueAsString(validSubscription)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.content().string("true"));
 
-	// Test if calling -> localhost:8090/schedule-consumer/validate-subscription with a SubscriptionDTO in the body is valid.
-	// The first is going to be invalid, the second is going to be valid.
-	@Test
-	void testValidateSubscription() {
-		SubscriptionDTO subscription = new SubscriptionDTO();
-		subscription.setGrade("Grado en Ingeniería Informática");
-		subscription.setSubject("Ingeniería de Servidores");
-		subscription.setGroup("A");
+        // Test invalid subscription
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-subscription")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Api-Key", apiKey)
+                        .content(objectMapper.writeValueAsString(invalidSubscription)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.content().string("false"));
 
-		try {
-			Boolean isValid = webClientBuilder.build()
-					.post()
-					.uri(BASE_URL + "/validate-subscription")
-					.header("X-Api-Key", apiKey) // Añadir la cabecera de la API Key
-					.bodyValue(subscription)
-					.retrieve()
-					.bodyToMono(Boolean.class)
-					.block();
+    }
 
-			assert isValid == true;
+    @Test
+    void testGetClassesFromGroup_unauthorized() throws Exception {
+        String grade = "Grado en Ingeniería Informática";
+        String subject = "Ingeniería de Servidores";
+        String group = "A";
 
-			subscription.setGroup("Z");
-			isValid = webClientBuilder.build()
-					.post()
-					.uri(BASE_URL + "/validate-subscription")
-					.header("X-Api-Key", apiKey) // Añadir la cabecera de la API Key
-					.bodyValue(subscription)
-					.retrieve()
-					.bodyToMono(Boolean.class)
-					.block();
-
-			assert isValid == false;
-
-		} catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-			System.err.println("Error: " + e.getStatusCode());
-			System.err.println("Response Body: " + e.getResponseBodyAsString());
-			throw e; // Re-lanzar la excepción para que el test falle
-		}
-	}
+        mockMvc.perform(MockMvcRequestBuilders.get(BASE_URL + "/classes-from-group")
+                        .param("grade", grade)
+                        .param("subject", subject)
+                        .param("group", group)
+                        .header("X-Api-Key", "wrong-api-key"))
+                .andExpect(MockMvcResultMatchers.status().isForbidden());
+    }
 
 }

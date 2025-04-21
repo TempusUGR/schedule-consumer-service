@@ -32,13 +32,15 @@ public interface ClassInfoRepository extends JpaRepository<ClassInfo, Long> {
         "JOIN c.subjectGroup sg " +
         "JOIN sg.subject s " +
         "JOIN s.grade g " +
-        "WHERE g.name = :facultyName " +
+        "WHERE g.faculty = :facultyName " +
         "AND c.classroom = :classroom " +
+        "AND c.day = :day " +
         "AND :date BETWEEN c.initDate AND c.finishDate " +
         "AND (" +
         "  (c.initHour < :finishHour AND c.finishHour > :initHour) " +
         ")")
         List<ClassInfo> findConflictingClassesOnGroupEvent(@Param("facultyName") String facultyName,
+                @Param("day") String day,
                 @Param("date") LocalDate date,
                 @Param("classroom") String classroom,
                 @Param("initHour") LocalTime initHour,
@@ -48,12 +50,14 @@ public interface ClassInfoRepository extends JpaRepository<ClassInfo, Long> {
         "JOIN c.subjectGroup sg " +
         "JOIN sg.subject s " +
         "JOIN s.grade g " +
-        "WHERE g.name = :facultyName " +
+        "WHERE g.faculty = :facultyName " +
+        "AND c.day = :day " +
         "AND :date BETWEEN c.initDate AND c.finishDate " +
         "AND (" +
         "  (c.initHour < :finishHour AND c.finishHour > :initHour) " +
         ")")
         List<ClassInfo> findConflictingClassesOnFacultyEvent(@Param("facultyName") String facultyName,
+                @Param("day") String day,
                 @Param("date") LocalDate date,
                 @Param("initHour") LocalTime initHour,
                 @Param("finishHour") LocalTime finishHour);
