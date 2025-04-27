@@ -64,13 +64,13 @@ public class ScheduleConsumerController {
         return ResponseEntity.ok(classes);
     }
 
-    @PostMapping("/validate-subscription")
+    @PostMapping("/subscription-validation")
     public ResponseEntity<Boolean> validateSubscription(@RequestBody SubscriptionDTO subscription) {
         boolean isValid = scheduleConsumerService.validateSubscription(subscription);
         return ResponseEntity.ok(isValid);
     }
 
-    @PostMapping("/validate-extra-class")
+    @PostMapping("/extraclass-validation")
     public ResponseEntity<Boolean> validateExtraClass(@RequestBody ExtraClassDTO extraClass) {
         boolean isValid = scheduleConsumerService.validateExtraClass(extraClass);
         return ResponseEntity.ok(isValid);

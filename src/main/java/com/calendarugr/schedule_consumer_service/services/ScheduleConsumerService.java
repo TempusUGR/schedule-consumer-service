@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -42,11 +44,15 @@ public class ScheduleConsumerService {
     @Autowired 
     private ClassInfoRepository classInfoRepository;
 
+    //Logger
+    private static final Logger logger = LoggerFactory.getLogger(ScheduleConsumerService.class);
+
     private Optional<Grade> findGradeByName(String name) {
         return gradeRepository.findByName(name);
     }
 
     private Optional<Subject> getSubjectByNameAndGrade (String name, String grade) {
+        logger.info("Grade: " + grade);
         Optional<Grade> gradeEntity = findGradeByName(grade);
         if (gradeEntity.isPresent()) {
             return subjectRepository.findByNameAndGrade(name, gradeEntity.get());
@@ -69,11 +75,10 @@ public class ScheduleConsumerService {
         Optional<Group> groupOptional = getGroupByNameAndSubjectName(group, subject, grade);
         if (groupOptional.isPresent()) {
             Group groupEntity = groupOptional.get();
-            //System.out.println("Group: " + groupEntity.getName() + " ID " + groupEntity.getId());
             classes = classInfoRepository.findBySubjectGroup(groupEntity);
             if (classes.isEmpty()) {
-                System.out.println("Classes empty");
-            }
+                logger.info("No classes found for group: " + group);
+            } 
         }
 
         return classes;
@@ -179,7 +184,6 @@ public class ScheduleConsumerService {
     }
 
     public boolean validateExtraClass(ExtraClassDTO extraClass) {
-        System.out.println("Validating extra class");
 
         if (extraClass.getType().equals("GROUP")) { // A group event depends on classroom
             // First we need to check if the grade exists
@@ -209,8 +213,6 @@ public class ScheduleConsumerService {
                 extraClass.getInitHour(),
                 extraClass.getFinishHour()
             );
-
-            System.out.println("Conflicts: " + conflicts.size());
 
             if (!conflicts.isEmpty()) {
                 return false;
