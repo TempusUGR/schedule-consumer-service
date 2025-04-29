@@ -89,7 +89,7 @@ class ScheduleConsumerServiceApplicationTests {
         extraClass.setType("GROUP");
         extraClass.setGroupName("A");
 
-        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-extra-class")
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/extraclass-validation")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Api-Key", apiKey)
                         .content(objectMapper.writeValueAsString(extraClass)))
@@ -136,7 +136,7 @@ class ScheduleConsumerServiceApplicationTests {
         invalidSubscription.setGroup("Z");
 
         // Test valid subscription
-        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-subscription")
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/subscription-validation")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Api-Key", apiKey)
                         .content(objectMapper.writeValueAsString(validSubscription)))
@@ -145,7 +145,7 @@ class ScheduleConsumerServiceApplicationTests {
                 .andExpect(MockMvcResultMatchers.content().string("true"));
 
         // Test invalid subscription
-        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/validate-subscription")
+        mockMvc.perform(MockMvcRequestBuilders.post(BASE_URL + "/subscription-validation")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-Api-Key", apiKey)
                         .content(objectMapper.writeValueAsString(invalidSubscription)))
