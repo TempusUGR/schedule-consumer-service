@@ -28,6 +28,8 @@ import com.calendarugr.schedule_consumer_service.repositories.GroupRepository;
 import com.calendarugr.schedule_consumer_service.repositories.SubjectRepository;
 
 import jakarta.transaction.Transactional;
+//logger
+import org.slf4j.Logger;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -37,6 +39,8 @@ import lombok.Setter;
 public class AllGradesScrapping {
 
     private final ApiGatewayValidationFilter apiGatewayValidationFilter;
+
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(AllGradesScrapping.class);
 
     private static final String ROOT_URL = "https://grados.ugr.es/";
 
@@ -65,17 +69,17 @@ public class AllGradesScrapping {
 
         switch (day) {
             case "1":
-                return "Lunes";
+                return "lunes";
             case "2":
-                return "Martes";
+                return "martes";
             case "3":
-                return "Miércoles";
+                return "miércoles";
             case "4":
-                return "Jueves";
+                return "jueves";
             case "5":
-                return "Viernes";
+                return "viernes";
             default:
-                return "Sin día";
+                return "sin día";
         }
     }
 
@@ -200,7 +204,7 @@ public class AllGradesScrapping {
 
             for (Element subject : subjects) {
                 String subject_url = subject.attr("href");
-                String subject_name = subject.text();
+                String subject_name = subject.text().trim(); // Sometimes the name has a space at the end;
 
                 Optional<Subject> subjectOptional = subjectRepository.findByNameAndGrade(subject_name, grade);
 
@@ -220,6 +224,10 @@ public class AllGradesScrapping {
         List<Subject> subjects = subjectRepository.findAll();
 
         for (Subject subject : subjects) {
+
+            logger.info("Scrapping the subject " + subject.getName() + " of the grade " + subject.getGrade().getName());
+            logger.info("URL: " + subject.getUrl());
+            logger.info("% of scrapping done: " + (subjects.indexOf(subject) * 100 / subjects.size()) + "%");
 
             Document doc = connect(subject.getUrl());
 

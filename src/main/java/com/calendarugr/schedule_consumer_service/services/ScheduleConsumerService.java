@@ -121,6 +121,15 @@ public class ScheduleConsumerService {
             if (!subjects.isEmpty()) {
                 return subjects.stream().map(subject -> {
                     List<Group> groups = groupRepository.findBySubject(subject);
+                    if (groups.isEmpty()) { // Sometimes the prev method returns an empty list if there is only one group
+                        Group group = groupRepository.findFirstBySubject(subject.getId());
+                        if (group != null) {
+                            groups.add(group);
+                        } else {
+                            logger.info("No groups found for subject: " + subject.getName() + " with id " + subject.getId());
+                            logger.info("SQL : SELECT * FROM subject_group WHERE subject = " + subject.getId() + " LIMIT 1");
+                        }
+                    }
                     return new SubjectGroupsDTO(subject.getName(), groups.stream().map(Group::getName).toList());
                 }).toList();
             }
