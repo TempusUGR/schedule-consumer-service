@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import com.calendarugr.schedule_consumer_service.dtos.ExtraClassDTO;
 import com.calendarugr.schedule_consumer_service.dtos.FieldGradeDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubjectGroupsDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubscriptionDTO;
+import com.calendarugr.schedule_consumer_service.dtos.TeacherClassesDTO;
 import com.calendarugr.schedule_consumer_service.entities.ClassInfo;
 import com.calendarugr.schedule_consumer_service.services.ScheduleConsumerService;
 
@@ -52,6 +54,17 @@ public class ScheduleConsumerController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron materias y grupos para el grado " + grade);
         }
         return ResponseEntity.ok(subjectsGroups);
+    }
+
+    @GetMapping("/teacher-classes")
+    public ResponseEntity<?> getTeacherClasses(@RequestParam String partialTeacherName){
+
+        List<TeacherClassesDTO> classes = scheduleConsumerService.getTeacherClasses(partialTeacherName);
+        
+        if (classes.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No se encontraron clases para el usuario");
+        }
+        return ResponseEntity.ok(classes);               
     }
 
     @PostMapping("/classes-per-subscriptions")

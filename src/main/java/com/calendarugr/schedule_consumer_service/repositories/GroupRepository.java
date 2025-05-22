@@ -18,4 +18,5 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     
     @Query(value = "SELECT * FROM subject_group WHERE subject = :subjectId LIMIT 1", nativeQuery = true)
     Group findFirstBySubject(@Param("subjectId") Long subjectId);
+    List<Group> findByTeacherContaining(String teacher);
 }

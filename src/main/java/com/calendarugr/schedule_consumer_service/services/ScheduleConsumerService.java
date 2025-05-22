@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import com.calendarugr.schedule_consumer_service.dtos.ExtraClassDTO;
 import com.calendarugr.schedule_consumer_service.dtos.FieldGradeDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubjectGroupsDTO;
 import com.calendarugr.schedule_consumer_service.dtos.SubscriptionDTO;
+import com.calendarugr.schedule_consumer_service.dtos.TeacherClassesDTO;
 import com.calendarugr.schedule_consumer_service.entities.ClassInfo;
 import com.calendarugr.schedule_consumer_service.entities.Grade;
 import com.calendarugr.schedule_consumer_service.entities.Group;
@@ -245,6 +247,63 @@ public class ScheduleConsumerService {
 
         return true;
         
+    }
+
+    public List<TeacherClassesDTO> getTeacherClasses(String partialTeacherName) {
+        
+        // Min 3 characters
+        if (partialTeacherName.length() < 3) {
+            return List.of();
+        }
+
+        // First we get the groups where teacher like partialTeacherName
+        List<Group> groups = groupRepository.findByTeacherContaining(partialTeacherName);
+
+        //logger.info("Groups: " + groups);
+
+        if (groups.isEmpty()) {
+            return List.of();
+        }
+
+        // Then we get the different names in the "teacher" field of subject_group
+        // In the teacher field we can find a name, or a list of names separated by commas
+        Set<String> teachers = groups.stream()
+            .flatMap(group -> {
+                String[] teacherNames = group.getTeacher().split(",");
+                // Remove the names that don't contain the partialTeacherName
+                teacherNames = java.util.Arrays.stream(teacherNames)
+                    .filter(name -> name.toLowerCase().contains(partialTeacherName.toLowerCase()))
+                    .toArray(String[]::new);
+                return Set.of(teacherNames).stream();
+            })
+            .map(String::trim)
+            .collect(java.util.stream.Collectors.toSet());   
+            
+        //logger.info("Teachers: " + teachers);
+
+        // From each teacher we build a TeacherClassesDTO
+        List<TeacherClassesDTO> teacherClasses = new ArrayList<>();
+
+        for (String teacher : teachers) {
+            List<SubscriptionDTO> classes = new ArrayList<>();
+            for (Group group : groups) {
+                if (group.getTeacher().contains(teacher)) {
+                    SubscriptionDTO subscription = new SubscriptionDTO();
+                    subscription.setFaculty(group.getSubject().getGrade().getFaculty());
+                    subscription.setGrade(group.getSubject().getGrade().getName());
+                    subscription.setSubject(group.getSubject().getName());
+                    subscription.setGroup(group.getName());
+                    classes.add(subscription);
+                }
+            }
+            TeacherClassesDTO teacherClassesDTO = new TeacherClassesDTO();
+            teacherClassesDTO.setTeacherName(teacher);
+            teacherClassesDTO.setClasses(classes);
+            teacherClasses.add(teacherClassesDTO);
+        }
+
+        // There are no duplicated teachers, so we can return the list
+        return teacherClasses;
     }
 
 }
