@@ -7,23 +7,34 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.jsoup.HttpStatusException;
 
+import com.calendarugr.schedule_consumer_service.dtos.ErrorResponseDTO;
+
 import java.io.IOException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(IOException.class)
-    public ResponseEntity<String> handleIOException(IOException ex, WebRequest request) {
-        return new ResponseEntity<>("IO error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponseDTO> handleIOException(IOException ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new ErrorResponseDTO("IOException", "IO error occurred: " + ex.getMessage()),
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
     @ExceptionHandler(HttpStatusException.class)
-    public ResponseEntity<String> handleHttpStatusException(HttpStatusException ex, WebRequest request) {
-        return new ResponseEntity<>("HTTP error occurred: " + ex.getStatusCode(), HttpStatus.valueOf(ex.getStatusCode()));
+    public ResponseEntity<ErrorResponseDTO> handleHttpStatusException(HttpStatusException ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new ErrorResponseDTO("HttpStatusException", "HTTP error occurred: " + ex.getStatusCode()),
+            HttpStatus.valueOf(ex.getStatusCode())
+        );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception ex, WebRequest request) {
-        return new ResponseEntity<>("An error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponseDTO> handleException(Exception ex, WebRequest request) {
+        return new ResponseEntity<>(
+            new ErrorResponseDTO("Exception", "An error occurred: " + ex.getMessage()),
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 }
