@@ -99,7 +99,8 @@ public class AllGradesScrapping {
     }
 
     @Async
-    @Scheduled(cron = "0 50 23 * * SUN")
+    //Scheduled all days at 23:50
+    //@Scheduled(cron = "0 50 23 * * ?")
     @Transactional
     public void runAllTasks() {
 
