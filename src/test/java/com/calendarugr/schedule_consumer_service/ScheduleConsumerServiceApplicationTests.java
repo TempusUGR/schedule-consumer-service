@@ -68,7 +68,7 @@ class ScheduleConsumerServiceApplicationTests {
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
-        .andExpect(MockMvcResultMatchers.jsonPath("$[0].day").value("Viernes"));
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].day").value("viernes"));
 
     }
 
