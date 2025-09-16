@@ -84,27 +84,29 @@ public class AllGradesScrapping {
     }
 
     private Document connect(String url) {
-
-        Document doc = null;
-
-        try {
-            doc = connection.url(url).get();
-        } catch (HttpStatusException e) {
-            System.out.println("Error: " + e.getStatusCode());
-        } catch (IOException e) {
-            System.out.println("Error: " + e.getMessage());
+        int attempts = 3;
+        for (int i = 0; i < attempts; i++) {
+            try {
+                return Jsoup.connect(url).timeout(15000).get();
+            } catch (IOException e) {
+                System.out.println("Intento " + (i + 1) + " fallido: " + e.getMessage());
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ignored) {
+                }
+            }
         }
-
-        return doc;
+        return null;
     }
 
     @Async
-    //Scheduled all days at 23:50
-    //@Scheduled(cron = "0 50 23 * * ?")
+    // Scheduled all days at 23:50
+    @Scheduled(cron = "0 50 23 * * ?")
     @Transactional
     public void runAllTasks() {
 
-        if (serverPort.equals("8083")) {
+        System.out.println("Server port: " + serverPort);
+        if ("8083".equals(serverPort)) {
             long startTime = System.currentTimeMillis();
             System.out.println("Starting the scrapping process...");
             cleanData();
@@ -114,8 +116,10 @@ public class AllGradesScrapping {
             long endTime = System.currentTimeMillis();
             System.out.println(
                     "The scrapping process has finished. It took " + (endTime - startTime) / 1000 / 60 + " minutes."); // ~
-                                                                                                                    // 53                                                                                                           // minutes
-        } 
+                                                                                                                       // 53
+                                                                                                                       // //
+                                                                                                                       // minutes
+        }
 
     }
 
@@ -186,7 +190,7 @@ public class AllGradesScrapping {
 
             if (grade.getFaculty() == null) {
                 Elements faculty = subjects_doc.select(".informacion-grado tbody tr a");
-                //grade.setFaculty(faculty.text());
+                // grade.setFaculty(faculty.text());
 
                 for (Element fac : faculty) {
 
@@ -233,7 +237,8 @@ public class AllGradesScrapping {
             Document doc = connect(subject.getUrl());
 
             if (doc == null) {
-                System.out.println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
+                System.out
+                        .println("Error: No se ha podido conectar con la página de la asignatura" + subject.getName());
                 return;
             }
 
@@ -286,7 +291,7 @@ public class AllGradesScrapping {
 
                                 if (group.getTeacher().length() > 450) { // Limit to 450 characters
                                     group.setTeacher(group.getTeacher().substring(0, 450) + ".");
-                                } 
+                                }
                                 groupRepository.save(group);
                             }
                         }
@@ -302,7 +307,8 @@ public class AllGradesScrapping {
 
                 for (Element classElement : classes) {
 
-                    // classes are identified by the class ".clase" and the day, for example "dia-5" its friday
+                    // classes are identified by the class ".clase" and the day, for example "dia-5"
+                    // its friday
 
                     String day = this.getDay(classElement.className().split("-")[1]);
                     String group = classElement.select(".grupo").text().replace("Grupo:", "").trim();
@@ -343,7 +349,8 @@ public class AllGradesScrapping {
                                     java.time.LocalDate.parse(finishDate, dateFormatter), classroom,
                                     groupOptional.get());
 
-                    //System.out.println("SUBJECT " + subject.getName() + " OF THE GRADE " + subject.getGrade().getName());
+                    // System.out.println("SUBJECT " + subject.getName() + " OF THE GRADE " +
+                    // subject.getGrade().getName());
 
                     if (listClases.size() == 0) {
 

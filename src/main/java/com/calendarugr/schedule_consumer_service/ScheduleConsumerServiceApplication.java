@@ -38,7 +38,7 @@ public class ScheduleConsumerServiceApplication {
 	@Bean
     CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {
-            //bootScrapper.runAllTasks();
+            bootScrapper.runAllTasks();
         };
     }
 }
