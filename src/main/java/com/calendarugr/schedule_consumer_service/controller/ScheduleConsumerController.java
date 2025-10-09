@@ -29,6 +29,14 @@ public class ScheduleConsumerController {
     @Autowired
     private ScheduleConsumerService scheduleConsumerService;
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ScheduleConsumerController.class);
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkService() {
+        logger.info("Checking schedule consumer service health");
+        return ResponseEntity.ok("Schedule consumer service is running");
+    }
+
     @GetMapping("/classes-from-group")
     public ResponseEntity<?> getClasses(@RequestParam String grade, @RequestParam String subject, @RequestParam String group) {
         List<ClassInfo> classes = scheduleConsumerService.getClasses(grade, subject, group);
